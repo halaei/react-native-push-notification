@@ -651,6 +651,17 @@ public class RNPushNotificationHelper {
         }
     }
 
+    private int argb(String color) {
+        if (color == null || color.length() != 8) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(color, 16);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     public void clearNotifications() {
         Log.i(LOG_TAG, "Clearing alerts from the notification centre");
 
@@ -854,7 +865,7 @@ public class RNPushNotificationHelper {
         manager.deleteNotificationChannel(channel_id);
     }
 
-    private boolean checkOrCreateChannel(NotificationManager manager, String channel_id, String channel_name, String channel_description, Uri soundUri, int importance, long[] vibratePattern) {
+    private boolean checkOrCreateChannel(NotificationManager manager, String channel_id, String channel_name, String channel_description, Uri soundUri, int importance, long[] vibratePattern, int ledColor) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
             return false;
         if (manager == null)
@@ -889,6 +900,10 @@ public class RNPushNotificationHelper {
             } else {
                 channel.setSound(null, null);
             }
+            if (ledColor != 0) {
+                channel.enableLights(true);
+                channel.setLightColor(ledColor);
+            }
 
             manager.createNotificationChannel(channel);
 
@@ -909,12 +924,13 @@ public class RNPushNotificationHelper {
         int importance = channelInfo.hasKey("importance") ? channelInfo.getInt("importance") : 4;
         boolean vibrate = channelInfo.hasKey("vibrate") && channelInfo.getBoolean("vibrate");
         long[] vibratePattern = vibrate ? new long[] { 0, DEFAULT_VIBRATION } : null;
+        String lightColor = channelInfo.getString("lightColor");
 
         NotificationManager manager = notificationManager();
 
         Uri soundUri = getSoundUri(soundName);
 
-        return checkOrCreateChannel(manager, channelId, channelName, channelDescription, soundUri, importance, vibratePattern);
+        return checkOrCreateChannel(manager, channelId, channelName, channelDescription, soundUri, importance, vibratePattern, argb(lightColor));
     }
     
     public boolean isApplicationInForeground() {
